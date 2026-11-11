@@ -1,0 +1,4 @@
+Land_Cover,NDVI,NDRE,NDWI
+Bare Soil,0.247,0.1803,-0.3252
+Vegetation,0.6174,0.4171,-0.5706
+Water,-0.0131,-0.2263,0.168

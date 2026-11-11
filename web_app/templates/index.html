@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101b15">
+    <title>Fieldnote | Crop health intelligence</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/" aria-label="Fieldnote home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M5 25C9 18 14 12 27 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+              <path d="M8 24c-1-7 3-11 10-12-1 7-4 11-10 12Z" fill="currentColor" opacity=".8"/>
+              <path d="M16 20c1-6 5-9 12-9-2 7-6 10-12 9Z" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="brand-copy"><strong>fieldnote</strong><small>GEOSPATIAL INTELLIGENCE</small></span>
+        </a>
+
+        <div class="workspace-label">WORKSPACE</div>
+        <a class="nav-link active" href="#overview">
+          <span class="nav-icon">⌂</span> Overview
+        </a>
+        <a class="nav-link" href="#indices">
+          <span class="nav-icon">◈</span> Spectral indices
+          <span class="nav-count">07</span>
+        </a>
+        <a class="nav-link" href="#statistics">
+          <span class="nav-icon">▤</span> Statistics
+        </a>
+        <a class="nav-link" href="#scene">
+          <span class="nav-icon">◎</span> Scene details
+        </a>
+
+        <div class="sidebar-divider"></div>
+        <div class="workspace-label">CURRENT SCENE</div>
+        <div class="scene-mini">
+          <span class="scene-dot"></span>
+          <div><strong>Mysuru, Karnataka</strong><small>Sentinel-2 · 06 Feb 2025</small></div>
+        </div>
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-note">
+          <span class="note-icon">↗</span>
+          <strong>Field-ready insights</strong>
+          <p>Explore vegetation and moisture patterns from a single satellite scene.</p>
+        </div>
+        <div class="sidebar-footer">CROP HEALTH MONITORING <span>v1.0</span></div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumbs">Projects <span>/</span> Crop health <span>/</span> <strong>Mysuru</strong></div>
+          <div class="topbar-actions">
+            <span class="data-status"><i></i> VERIFIED SCENE DATA</span>
+            <button id="refresh-button" class="icon-button" type="button" aria-label="Refresh dashboard" title="Refresh dashboard">↻</button>
+            <div class="avatar" title="Local workspace">TR</div>
+          </div>
+        </header>
+
+        <div id="app-error" class="app-error" role="alert" hidden></div>
+        <div id="loading-state" class="loading-state">Loading verified scene products…</div>
+
+        <div id="dashboard" hidden>
+          <section id="overview" class="page-heading">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> SATELLITE CROP MONITORING</div>
+              <h1>Crop health <em>at a glance.</em></h1>
+              <p class="heading-copy">Seven spectral signals. One clear picture of vegetation vigor and moisture across your study area.</p>
+            </div>
+            <a class="button button-dark" id="overview-download" href="/download/overview" download>
+              <span>↓</span> Export overview
+            </a>
+          </section>
+
+          <section class="scene-strip" aria-label="Satellite scene metadata">
+            <div class="scene-place">
+              <span class="place-icon">⌖</span>
+              <div><small>STUDY AREA</small><strong id="study-area"></strong></div>
+            </div>
+            <div class="scene-item"><small>ACQUISITION DATE</small><strong id="acquisition-date"></strong></div>
+            <div class="scene-item"><small>SATELLITE / COLLECTION</small><strong id="collection"></strong></div>
+            <div class="scene-item"><small>PIXEL SIZE</small><strong id="resolution"></strong></div>
+            <div class="scene-item scene-crs"><small>COORDINATE SYSTEM</small><strong id="crs"></strong></div>
+          </section>
+
+          <section class="metric-grid" aria-label="Scene summary metrics">
+            <article class="metric-card">
+              <div class="metric-top"><span class="metric-label">VALID PIXELS</span><span class="metric-icon green">◉</span></div>
+              <div class="metric-value" id="valid-pixels">—</div>
+              <div class="metric-foot"><span class="status-dot"></span><span id="valid-percent">—</span> of scene area</div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-top"><span class="metric-label">MASKED PIXELS</span><span class="metric-icon amber">◌</span></div>
+              <div class="metric-value" id="invalid-pixels">—</div>
+              <div class="metric-foot"><span id="invalid-percent">—</span> excluded from index calculations</div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-top"><span class="metric-label">SPECTRAL INDICES</span><span class="metric-icon blue">◈</span></div>
+              <div class="metric-value">07</div>
+              <div class="metric-foot">Vegetation &amp; moisture indicators</div>
+            </article>
+            <article class="metric-card">
+              <div class="metric-top"><span class="metric-label">SCENE FOOTPRINT</span><span class="metric-icon violet">▧</span></div>
+              <div class="metric-value" id="dimensions">—</div>
+              <div class="metric-foot" id="input-name">—</div>
+            </article>
+          </section>
+
+          <section id="indices" class="analysis-layout">
+            <article class="panel map-panel">
+              <div class="panel-heading">
+                <div>
+                  <div class="section-kicker">SPATIAL EXPLORER</div>
+                  <h2>Index map</h2>
+                </div>
+                <span class="live-badge"><i></i> 20 M RESOLUTION</span>
+              </div>
+              <div id="index-tabs" class="index-tabs" role="tablist" aria-label="Select spectral index"></div>
+              <div class="map-frame">
+                <div class="map-toolbar">
+                  <span id="map-title">NDVI</span>
+                  <span class="map-hint">Click map to inspect a pixel <b>↗</b></span>
+                </div>
+                <div class="map-image-wrap">
+                  <img id="index-map" class="index-map" alt="Selected crop-health index map; gray pixels are invalid">
+                </div>
+                <div class="map-legend">
+                  <div class="legend-copy"><span>LOW</span><span id="legend-index">NDVI</span><span>HIGH</span></div>
+                  <div id="legend-gradient" class="legend-gradient"></div>
+                  <div class="legend-range"><span id="display-min">—</span><span>Display stretch (2nd–98th percentile)</span><span id="display-max">—</span></div>
+                </div>
+              </div>
+              <div id="pixel-result" class="pixel-result" aria-live="polite">
+                <span class="pixel-pin">⌖</span>
+                <span>Click any map pixel to inspect its index value and map coordinates.</span>
+              </div>
+              <details class="overview-details">
+                <summary>View all seven maps together</summary>
+                <img id="combined-map" class="combined-map" alt="Combined two-by-four map of all seven Sentinel-2 indices" loading="lazy">
+              </details>
+            </article>
+
+            <aside class="panel index-panel">
+              <div class="panel-heading">
+                <div><div class="section-kicker">INDEX PROFILE</div><h2 id="profile-name">NDVI</h2></div>
+                <span id="profile-chip" class="index-chip">NDVI</span>
+              </div>
+              <div class="formula-box">
+                <span>FORMULA</span>
+                <code id="profile-formula"></code>
+              </div>
+              <p id="profile-meaning" class="profile-meaning"></p>
+              <div class="use-box"><span class="use-icon">✳</span><p id="profile-use"></p></div>
+
+              <div class="profile-stats">
+                <div><small>MEAN</small><strong id="index-mean">—</strong></div>
+                <div><small>MEDIAN</small><strong id="index-median">—</strong></div>
+                <div><small>MINIMUM</small><strong id="index-min">—</strong></div>
+                <div><small>MAXIMUM</small><strong id="index-max">—</strong></div>
+                <div><small>STD. DEVIATION</small><strong id="index-std">—</strong></div>
+                <div><small>VALID PIXELS</small><strong id="index-valid">—</strong></div>
+              </div>
+              <div class="index-panel-footer">
+                <span>Scientific values are not clipped.</span>
+                <a id="download-selected" class="text-link" href="#" download>Download GeoTIFF <span>↓</span></a>
+              </div>
+            </aside>
+          </section>
+
+          <section id="statistics" class="panel statistics-panel">
+            <div class="panel-heading statistics-heading">
+              <div><div class="section-kicker">AT A GLANCE</div><h2>Index statistics</h2></div>
+              <a class="button button-light" href="/download/statistics" download><span>↓</span> Download CSV</a>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>INDEX</th><th>MINIMUM</th><th>MAXIMUM</th><th>MEAN</th><th>MEDIAN</th><th>STD. DEV.</th><th>VALID</th><th>INVALID</th></tr></thead>
+                <tbody id="statistics-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="scene" class="scene-details-grid">
+            <article class="panel bands-panel">
+              <div class="section-kicker">SENTINEL-2 INPUT</div>
+              <h2>Six bands, one scene.</h2>
+              <p class="muted-copy">Co-registered surface reflectance from the harmonized Sentinel-2 Level-2A collection.</p>
+              <div id="band-list" class="band-list"></div>
+            </article>
+            <article class="panel quality-panel">
+              <div class="section-kicker">DATA QUALITY</div>
+              <h2>Masking &amp; scale</h2>
+              <div class="quality-row"><span class="quality-check">✓</span><p><strong>Surface reflectance</strong><br>Stored values are divided by 10,000. Values are not clipped.</p></div>
+              <div class="quality-row"><span class="quality-check">✓</span><p><strong>Valid pixel rule</strong><br>All six bands must be finite and greater than zero; source masks are honored.</p></div>
+              <div class="quality-row"><span class="quality-check">✓</span><p><strong>EVI stability</strong><br>Denominator magnitudes below 0.1 are masked to avoid unstable values.</p></div>
+              <div class="quality-row"><span class="quality-check">✓</span><p><strong>GeoTIFF exports</strong><br>Float32 values, original CRS and grid, with −9999 as NoData.</p></div>
+              <a class="text-link summary-link" href="/download/summary" download>Download project information <span>↓</span></a>
+            </article>
+          </section>
+
+          <footer class="page-footer">
+            <span>FIELDNOTE <b>·</b> CROP HEALTH MONITORING</span>
+            <span>Source scene: Sentinel-2 · Mysuru · 06 Feb 2025</span>
+          </footer>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

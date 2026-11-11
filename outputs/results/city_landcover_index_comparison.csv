@@ -1,0 +1,16 @@
+City,Land_Cover,NDVI,NDRE,NDWI
+Jaipur,Bare Soil,0.129,0.0756,-0.3174
+Jaipur,Vegetation,0.6175,0.4109,-0.5603
+Jaipur,Water,-0.1723,-0.4559,0.2639
+Mysuru,Bare Soil,0.1524,0.1181,-0.2243
+Mysuru,Vegetation,0.5463,0.3859,-0.5356
+Mysuru,Water,0.2998,0.0119,-0.2112
+Patna,Bare Soil,0.3357,0.2388,-0.3783
+Patna,Vegetation,0.7759,0.4968,-0.6511
+Patna,Water,-0.1877,-0.2068,0.3289
+Pune,Bare Soil,0.3822,0.2548,-0.4478
+Pune,Vegetation,0.5371,0.3967,-0.5466
+Pune,Water,-0.1655,-0.1535,0.3939
+Raipur,Bare Soil,0.2358,0.2143,-0.2584
+Raipur,Vegetation,0.61,0.3954,-0.5592
+Raipur,Water,0.1601,-0.3273,0.0646

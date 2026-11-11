@@ -1,0 +1,39 @@
+Sentinel-2 Crop Health Monitoring - Project Summary
+===================================================
+Study area: Mysuru, Karnataka, India
+Acquisition date: 2025-02-06
+Satellite: Sentinel-2
+Google Earth Engine collection: COPERNICUS/S2_SR_HARMONIZED
+CRS designation: EPSG:32643 (source CRS retained unchanged)
+CRS handling: source raster CRS copied unchanged; no EPSG reconstruction performed.
+Spatial resolution: 20 m
+Raster dimensions: 498 columns x 499 rows
+Input raster: C:\Users\T RAO\OneDrive\Desktop\Crop_Health_Monitoring\data\sentinel2_complete_bands\Mysuru_Sentinel2_6_Bands.tif
+Input bands (source order): B2, B3, B4, B5, B8, B11
+Reflectance conversion: stored DN / 10000; values not clipped
+Valid-pixel rule: finite, positive reflectance in all six bands, honoring source masks.
+EVI denominator stability rule: abs(denominator) >= 0.1.
+
+Band information:
+  B2: Blue
+  B3: Green
+  B4: Red
+  B5: Red Edge 1
+  B8: Near Infrared
+  B11: Shortwave Infrared 1
+
+Index descriptions and agricultural applications:
+  NDVI: Canopy greenness and relative vegetation vigor.
+  EVI: Enhanced canopy vigor; denominator stability threshold applied.
+  GNDVI: Green-band vigor and chlorophyll-related variation.
+  NDRE: Red-edge response for canopy chlorophyll and stress.
+  NDMI: Canopy moisture variation and potential water stress.
+  MSI: Moisture stress ratio; larger values commonly indicate drier vegetation.
+  SAVI: Soil-adjusted greenness for sparse vegetation.
+
+Outputs:
+  Visualization: C:\Users\T RAO\OneDrive\Desktop\Crop_Health_Monitoring\outputs\all_7_indices\sentinel2_all_7_indices.png
+  Statistics CSV: C:\Users\T RAO\OneDrive\Desktop\Crop_Health_Monitoring\outputs\all_7_indices\index_statistics.csv
+  Individual Float32 GeoTIFFs: C:\Users\T RAO\OneDrive\Desktop\Crop_Health_Monitoring\outputs\all_7_indices\geotiff
+  Project summary: C:\Users\T RAO\OneDrive\Desktop\Crop_Health_Monitoring\outputs\all_7_indices\project_summary.txt
+  GeoTIFF NoData value: -9999

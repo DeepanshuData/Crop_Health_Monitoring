@@ -1,0 +1,1 @@
+"""AgriVision Streamlit application package."""
