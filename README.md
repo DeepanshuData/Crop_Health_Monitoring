@@ -41,6 +41,7 @@ The Streamlit app reuses the verified local raster products and provides:
 | **Interactive Field Analysis** | Toggle raster and index layers, draw visual reference shapes, and click a location to inspect the nearest source pixel. |
 | **Location & Earth Engine** | Upload a study-area GeoJSON and request Sentinel-2 imagery and regional statistics from Earth Engine. |
 | **Historical Monitoring** | Plot per-scene NDVI, NDRE, and NDWI statistics and compare earliest/latest maps for real Earth Engine observations. |
+| **Satellite Crop Health Monitoring** | Mandya satellite map with NDVI, NDRE, and NDWI layers; district and optional uploaded-farm statistics; NDVI time series and monthly summaries; raster statistics and explicit Google Drive export. |
 | **Crop Health Reports** | Download GeoTIFFs, statistics, project summary, PDF report, and a ZIP bundle. |
 | **About the Project** | Review the bands, formulas, masking policy, processing details, and limitations. |
 
@@ -68,6 +69,22 @@ The Streamlit app reuses the verified local raster products and provides:
 
 <img src="docs/screenshots/crop-health-reports.png" alt="Crop Health Reports statistics table and GeoTIFF download controls" width="900">
 
+#### Satellite Crop Health Monitoring — Mandya
+
+The page uses a dark theme and displays the archived Mandya products when live Earth Engine access is not configured. Live imagery, date-wise observations, farm statistics, and Drive exports require a configured Earth Engine project.
+
+<img src="docs/screenshots/satellite-crop-health-overview.png" alt="Mandya crop health page with district statistics and reducer results" width="900">
+
+<img src="docs/screenshots/satellite-index-map-ndvi.png" alt="Mandya NDVI raster displayed over the map" width="900">
+
+<img src="docs/screenshots/satellite-index-map-ndre.png" alt="Mandya NDRE raster displayed over the map" width="900">
+
+<img src="docs/screenshots/satellite-index-map-ndwi.png" alt="Mandya NDWI raster displayed over the map" width="900">
+
+<img src="docs/screenshots/satellite-ndvi-timeseries-monthly.png" alt="Mandya monthly NDVI chart and monthly summary table" width="900">
+
+<img src="docs/screenshots/satellite-seasonal-raster-statistics.png" alt="Month-to-month NDVI changes and processed raster statistics" width="900">
+
 ## Run the web dashboard
 
 Install the project dependencies if needed, then start the local Flask app from the project root:
@@ -92,7 +109,11 @@ Open the local URL printed by Streamlit, typically [http://localhost:8501](http:
 
 ## Optional Google Earth Engine features
 
-The local dataset contains only the verified Mysuru scene from 6 February 2025. Other locations and dates are not bundled. To request other real Sentinel-2 scenes, Earth Engine requires network access, user authentication, and a Google Cloud project enabled for Earth Engine. In PowerShell:
+The Streamlit **Satellite Crop Health Monitoring** page includes an optional live Earth Engine workflow for Mandya, Karnataka. The workflow loads `COPERNICUS/S2_SR_HARMONIZED` over the most recent 12 months, filters scene-level `CLOUDY_PIXEL_PERCENTAGE` to less than 10%, and masks cloud, cirrus, shadow, and other invalid pixels using SCL classes 0, 1, 3, 8, 9, 10, and 11. It calculates NDVI and NDWI with `normalizedDifference()` and NDRE with `expression()`, then displays selectable index map layers.
+
+Live district means use `reduceRegion()` and `reduceRegions()`. Farm-level statistics are calculated only for polygons uploaded by the user as GeoJSON; the project does not include surveyed farm boundaries. The time series displays available date-wise observations and monthly means without filling missing months. A user-triggered action exports a 365-day mean NDVI GeoTIFF to Google Drive. After downloading that file, upload it on the page to analyze its raster statistics in Python while retaining its CRS and grid information.
+
+Live Earth Engine access requires network connectivity, an Earth Engine-enabled Google Cloud project, and server-side authentication. In PowerShell:
 
 ```powershell
 .\.venv\Scripts\earthengine.exe authenticate
@@ -100,7 +121,7 @@ $env:EARTHENGINE_PROJECT = "your-earth-engine-enabled-project"
 .\.venv\Scripts\streamlit.exe run app\app.py
 ```
 
-The app does not initiate authentication or claim imagery is available before an Earth Engine query succeeds. Earth Engine cloud filtering uses scene-level `CLOUDY_PIXEL_PERCENTAGE`, not AOI-specific cloud coverage. The historical workflow uses real matching observations; it does not infer a date for the undated `data/Mysuru_NDVI_2024.tif`.
+Authentication is performed on the server; do not put credentials or private keys in the frontend or source code. The app does not initiate authentication, automatically start exports, or claim live imagery is available before a query succeeds. Without `EARTHENGINE_PROJECT`, the Mandya page continues to show its saved workflow outputs and clearly identifies live features as unavailable. Cloud filtering uses scene-level `CLOUDY_PIXEL_PERCENTAGE`, not AOI-specific cloud coverage. The historical workflow uses real matching observations; it does not infer a date for the undated `data/Mysuru_NDVI_2024.tif`.
 
 ## Method and interpretation notes
 

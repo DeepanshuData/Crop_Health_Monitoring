@@ -41,10 +41,10 @@ st.sidebar.markdown(
     f"""
     <div class="sidebar-scene">
       <span class="scene-live"></span>
-      <div><b>Mysuru, Karnataka</b><small>06 Feb 2025 · 20 m</small></div>
+      <div><b>Reference scene · Mysuru</b><small>06 Feb 2025 · 20 m</small></div>
     </div>
     <div class="sidebar-data">
-      <span>VERIFIED LOCAL SCENE</span>
+      <span>EXISTING LOCAL REFERENCE</span>
       <b>{scene['dimensions'][0]} × {scene['dimensions'][1]} px</b>
       <small>{valid_percent:.1f}% valid reflectance pixels</small>
     </div>
@@ -61,6 +61,7 @@ pages = {
     "MONITORING": [
         st.Page("pages/location.py", title="Location & Earth Engine", icon=":material/location_on:"),
         st.Page("pages/history.py", title="Historical Monitoring", icon=":material/timeline:"),
+        st.Page("pages/satellite_crop_health.py", title="Satellite Crop Health Monitoring", icon=":material/satellite_alt:"),
         st.Page("pages/reports.py", title="Crop Health Reports", icon=":material/description:"),
     ],
     "PROJECT": [

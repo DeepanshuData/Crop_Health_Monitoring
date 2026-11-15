@@ -171,7 +171,7 @@ def _add_indices(image):
     def safe_ratio(numerator, denominator):
         return numerator.divide(denominator.updateMask(denominator.neq(0)))
 
-    ndvi = safe_ratio(nir.subtract(red), nir.add(red)).rename("NDVI")
+    ndvi = image.normalizedDifference(["B8", "B4"]).rename("NDVI")
     evi_denominator = nir.add(red.multiply(6)).subtract(blue.multiply(7.5)).add(1)
     evi = (
         safe_ratio(nir.subtract(red).multiply(2.5), evi_denominator)
@@ -179,11 +179,14 @@ def _add_indices(image):
         .rename("EVI")
     )
     gndvi = safe_ratio(nir.subtract(green), nir.add(green)).rename("GNDVI")
-    ndre = safe_ratio(nir.subtract(red_edge), nir.add(red_edge)).rename("NDRE")
+    ndre = image.expression(
+        "(NIR - RED_EDGE) / (NIR + RED_EDGE)",
+        {"NIR": nir, "RED_EDGE": red_edge},
+    ).rename("NDRE")
     ndmi = safe_ratio(nir.subtract(swir1), nir.add(swir1)).rename("NDMI")
     msi = safe_ratio(swir1, nir).rename("MSI")
     savi = safe_ratio(nir.subtract(red).multiply(1.5), nir.add(red).add(0.5)).rename("SAVI")
-    ndwi = safe_ratio(green.subtract(nir), green.add(nir)).rename("NDWI")
+    ndwi = image.normalizedDifference(["B3", "B8"]).rename("NDWI")
     return image.addBands([ndvi, evi, gndvi, ndre, ndmi, msi, savi, ndwi])
 
 
@@ -193,18 +196,24 @@ def _prepare_collection(
     start_date: date,
     end_date: date,
     max_cloud_percent: int,
+    exclusive_cloud_limit: bool = False,
 ):
+    cloud_filter = (
+        ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE", max_cloud_percent)
+        if exclusive_cloud_limit
+        else ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", max_cloud_percent)
+    )
     return (
         ee.ImageCollection(COLLECTION_ID)
         .filterBounds(geometry)
         .filterDate(start_date.isoformat(), (end_date + timedelta(days=1)).isoformat())
-        .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", max_cloud_percent))
+        .filter(cloud_filter)
         .map(lambda image: _add_indices(_scaled_reflectance(_mask_cloud_shadow(image))))
         .sort("system:time_start")
     )
 
 
-def _index_statistics(ee, image, geometry) -> dict[str, Any]:
+def _index_statistics(ee, image, geometry, scale: int = 20) -> dict[str, Any]:
     reducer = (
         ee.Reducer.mean()
         .combine(ee.Reducer.minMax(), sharedInputs=True)
@@ -214,7 +223,7 @@ def _index_statistics(ee, image, geometry) -> dict[str, Any]:
         result = image.select(list(EE_INDEX_BANDS)).reduceRegion(
             reducer=reducer,
             geometry=geometry,
-            scale=20,
+            scale=scale,
             maxPixels=100_000_000,
             tileScale=4,
         ).getInfo()
@@ -291,6 +300,58 @@ def search_sentinel2(
     }
 
 
+def _summarize_time_series_scenes(
+    ee,
+    collection,
+    geometry,
+    scene_count: int,
+    index_names: tuple[str, ...],
+    scale: int,
+    max_pixels: int,
+    scene_limit: int,
+    context: str,
+):
+    selected_count = min(scene_count, scene_limit)
+    limited_collection = collection.limit(selected_count)
+    scenes = limited_collection.toList(selected_count)
+
+    def summarize_scene(scene):
+        image = ee.Image(scene)
+        means = image.select(list(index_names)).reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=geometry,
+            scale=scale,
+            maxPixels=max_pixels,
+            tileScale=4,
+        )
+        properties = {
+            "date": image.date().format("YYYY-MM-dd"),
+            "scene_cloud_percent": image.get("CLOUDY_PIXEL_PERCENTAGE"),
+        }
+        properties.update({name: means.get(name) for name in index_names})
+        return ee.Feature(None, properties)
+
+    try:
+        response = ee.FeatureCollection(scenes.map(summarize_scene)).getInfo()
+    except Exception as error:
+        raise EarthEngineError(
+            f"Earth Engine could not calculate {context} regional means. "
+            f"Try fewer dates or a smaller study area: {error}"
+        ) from error
+
+    observations = []
+    for feature in response.get("features", []):
+        properties = feature.get("properties", {})
+        if any(properties.get(name) is not None for name in index_names):
+            observations.append(properties)
+    if not observations:
+        raise EarthEngineError(
+            f"Earth Engine found scenes but no valid masked pixels for {context}."
+        )
+    observations.sort(key=lambda row: row["date"])
+    return limited_collection, observations
+
+
 def sentinel2_time_series(
     geojson_text: str,
     start_date: date,
@@ -312,46 +373,17 @@ def sentinel2_time_series(
             "No Sentinel-2 observations match this geometry, date range and cloud threshold."
         )
 
-    limited_collection = collection.limit(120)
-    scenes = limited_collection.toList(120)
-
-    def summarize_scene(scene):
-        image = ee.Image(scene)
-        means = image.select(["NDVI", "NDRE", "NDWI"]).reduceRegion(
-            reducer=ee.Reducer.mean(),
-            geometry=geometry,
-            scale=20,
-            maxPixels=100_000_000,
-            tileScale=4,
-        )
-        return ee.Feature(
-            None,
-            {
-                "date": image.date().format("YYYY-MM-dd"),
-                "scene_cloud_percent": image.get("CLOUDY_PIXEL_PERCENTAGE"),
-                "NDVI": means.get("NDVI"),
-                "NDRE": means.get("NDRE"),
-                "NDWI": means.get("NDWI"),
-            },
-        )
-
-    try:
-        response = ee.FeatureCollection(scenes.map(summarize_scene)).getInfo()
-    except Exception as error:
-        raise EarthEngineError(
-            f"Earth Engine could not calculate historical regional means. Try fewer dates or a "
-            f"smaller study area: {error}"
-        ) from error
-    observations = []
-    for feature in response.get("features", []):
-        properties = feature.get("properties", {})
-        if any(properties.get(name) is not None for name in ("NDVI", "NDRE", "NDWI")):
-            observations.append(properties)
-    if not observations:
-        raise EarthEngineError(
-            "Earth Engine found scenes but no valid masked pixels in the study area."
-        )
-    observations.sort(key=lambda row: row["date"])
+    limited_collection, observations = _summarize_time_series_scenes(
+        ee,
+        collection,
+        geometry,
+        count,
+        ("NDVI", "NDRE", "NDWI"),
+        scale=20,
+        max_pixels=100_000_000,
+        scene_limit=120,
+        context="historical",
+    )
     first_image = ee.Image(limited_collection.sort("system:time_start").first()).clip(geometry)
     last_image = ee.Image(limited_collection.sort("system:time_start", False).first()).clip(geometry)
     tile_layers = {}
@@ -392,4 +424,282 @@ def sentinel2_time_series(
         "end_date": end_date.isoformat(),
         "max_cloud_percent": max_cloud_percent,
         "cloud_shadow_mask": "Sentinel-2 SCL classes 0, 1, 3, 8, 9, 10 and 11 masked.",
+    }
+
+
+def _mandya_boundary(ee):
+    districts = (
+        ee.FeatureCollection("FAO/GAUL/2025/level2")
+        .filter(ee.Filter.eq("GAUL0_NAME", "India"))
+        .filter(ee.Filter.eq("GAUL1_NAME", "Karnataka"))
+        .filter(ee.Filter.eq("GAUL2_NAME", "Mandya"))
+    )
+    try:
+        district_count = int(districts.size().getInfo())
+    except Exception as error:
+        raise EarthEngineError(
+            f"Earth Engine could not load the Mandya district boundary: {error}"
+        ) from error
+    if district_count != 1:
+        raise EarthEngineError(
+            f"Expected one Mandya boundary in FAO/GAUL/2025/level2; found {district_count}."
+        )
+    return districts, districts.geometry()
+
+
+def _farm_feature_collection(ee, geojson: dict[str, Any]):
+    if geojson["type"] == "FeatureCollection":
+        return ee.FeatureCollection(geojson)
+    if geojson["type"] == "Feature":
+        feature = ee.Feature(
+            ee.Geometry(geojson["geometry"]),
+            geojson.get("properties") or {},
+        )
+    else:
+        feature = ee.Feature(ee.Geometry(geojson))
+    return ee.FeatureCollection([feature])
+
+
+def mandya_sentinel2_time_series(
+    start_date: date,
+    end_date: date,
+    project: str | None = None,
+    farm_geojson_text: str | None = None,
+) -> dict[str, Any]:
+    """Fetch Mandya composite layers, regional/farm summaries and date-wise observations."""
+    if end_date < start_date:
+        raise ValueError("The end date must be on or after the start date.")
+    ee = _earth_engine(project)
+    districts, geometry = _mandya_boundary(ee)
+    collection = _prepare_collection(
+        ee,
+        geometry,
+        start_date,
+        end_date,
+        10,
+        exclusive_cloud_limit=True,
+    ).select("NDVI")
+    try:
+        scene_count = int(collection.size().getInfo())
+    except Exception as error:
+        raise EarthEngineError(
+            f"Earth Engine could not search the Mandya Sentinel-2 collection: {error}"
+        ) from error
+    if scene_count == 0:
+        raise EarthEngineError(
+            "No Mandya Sentinel-2 scenes match the last-year date range and <10% cloud threshold."
+        )
+    if scene_count > 1000:
+        raise EarthEngineError(
+            f"Earth Engine found {scene_count} scenes; narrow the date range to return complete observations."
+        )
+
+    composite = collection.median().clip(geometry)
+    statistics = _index_statistics(ee, composite, geometry, scale=10)
+    try:
+        district_result = composite.select("NDVI").reduceRegions(
+            collection=districts,
+            reducer=ee.Reducer.mean(),
+            scale=10,
+            tileScale=4,
+            maxPixelsPerRegion=1_000_000_000,
+        )
+        district_means = district_result.aggregate_array("mean").getInfo()
+    except Exception as error:
+        raise EarthEngineError(
+            f"Earth Engine could not calculate the Mandya district feature mean: {error}"
+        ) from error
+    if not district_means or district_means[0] is None:
+        raise EarthEngineError(
+            "Earth Engine returned no valid district mean for the selected date range."
+        )
+
+    farm_statistics = []
+    if farm_geojson_text is not None:
+        farm_geojson = validate_request(
+            farm_geojson_text,
+            start_date,
+            end_date,
+            max_cloud_percent=10,
+        )
+        farm_feature_count = (
+            len(farm_geojson["features"])
+            if farm_geojson["type"] == "FeatureCollection"
+            else 1
+        )
+        if farm_feature_count > 500:
+            raise ValueError("Upload no more than 500 farm polygons per analysis.")
+        farms = _farm_feature_collection(ee, farm_geojson)
+        try:
+            farm_result = composite.select("NDVI").reduceRegions(
+                collection=farms,
+                reducer=ee.Reducer.mean(),
+                scale=10,
+                tileScale=4,
+                maxPixelsPerRegion=100_000_000,
+            )
+            farm_values = ee.Dictionary(
+                {
+                    "ids": farm_result.aggregate_array("system:index"),
+                    "means": farm_result.aggregate_array("mean"),
+                }
+            ).getInfo()
+        except Exception as error:
+            raise EarthEngineError(
+                f"Earth Engine could not calculate farm-level means: {error}"
+            ) from error
+        farm_ids = farm_values.get("ids") or []
+        farm_means = farm_values.get("means") or []
+        farm_statistics = [
+            {
+                "farm": str(farm_ids[index]) if index < len(farm_ids) and farm_ids[index] else f"Farm {index + 1}",
+                "mean_ndvi": mean,
+            }
+            for index, mean in enumerate(farm_means)
+        ]
+
+    _, observations = _summarize_time_series_scenes(
+        ee,
+        collection,
+        geometry,
+        scene_count,
+        ("NDVI",),
+        scale=10,
+        max_pixels=1_000_000_000,
+        scene_limit=1000,
+        context="date-wise Mandya NDVI",
+    )
+    tile_layers = {}
+    visualization = {
+        "NDVI": {
+            "min": -0.2,
+            "max": 0.8,
+            "palette": ["a50026", "ffffbf", "006837"],
+        },
+        "NDRE": {
+            "min": -0.2,
+            "max": 0.6,
+            "palette": ["a50026", "ffffbf", "006837"],
+        },
+        "NDWI": {
+            "min": -0.5,
+            "max": 0.5,
+            "palette": ["8c510a", "f7f7f7", "01665e"],
+        },
+    }
+    try:
+        for index_name, params in visualization.items():
+            tile_layers[index_name] = composite.select(index_name).getMapId(params)[
+                "tile_fetcher"
+            ].url_format
+        tile_layers["true_color"] = composite.getMapId(
+            {"bands": ["B4", "B3", "B2"], "min": 0.0, "max": 0.3}
+        )["tile_fetcher"].url_format
+    except Exception as error:
+        raise EarthEngineError(
+            f"Earth Engine could not create Mandya map layers: {error}"
+        ) from error
+
+    return {
+        "observations": observations,
+        "scene_count": scene_count,
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "statistics": statistics,
+        "district_statistics": {
+            "district": "Mandya",
+            "mean_ndvi": district_means[0],
+        },
+        "farm_statistics": farm_statistics,
+        "tiles": tile_layers,
+        "cloud_filter": "CLOUDY_PIXEL_PERCENTAGE < 10",
+        "cloud_shadow_mask": "Sentinel-2 SCL classes 0, 1, 3, 8, 9, 10 and 11 masked.",
+    }
+
+
+def start_mandya_ndvi_drive_export(
+    start_date: date,
+    end_date: date,
+    project: str | None = None,
+) -> dict[str, str]:
+    """Start an explicit Earth Engine mean-NDVI GeoTIFF export to Google Drive."""
+    if end_date < start_date:
+        raise ValueError("The end date must be on or after the start date.")
+    ee = _earth_engine(project)
+    _, geometry = _mandya_boundary(ee)
+    collection = _prepare_collection(
+        ee,
+        geometry,
+        start_date,
+        end_date,
+        10,
+        exclusive_cloud_limit=True,
+    )
+    try:
+        scene_count = int(collection.size().getInfo())
+    except Exception as error:
+        raise EarthEngineError(
+            f"Earth Engine could not prepare the NDVI export collection: {error}"
+        ) from error
+    if scene_count == 0:
+        raise EarthEngineError(
+            "No Mandya Sentinel-2 scenes match the selected date range and <10% cloud threshold."
+        )
+
+    image = collection.select("NDVI").mean().clip(geometry)
+    export_name = (
+        f"Mandya_Mean_NDVI_{start_date:%Y%m%d}_{end_date:%Y%m%d}"
+    )
+    try:
+        task = ee.batch.Export.image.toDrive(
+            image=image,
+            description=export_name,
+            folder="Crop_Health_Monitoring",
+            fileNamePrefix=export_name,
+            region=geometry,
+            scale=10,
+            crs="EPSG:4326",
+            maxPixels=1_000_000_000_000,
+            fileFormat="GeoTIFF",
+            formatOptions={"cloudOptimized": True, "noData": -9999},
+        )
+        task.start()
+        status = task.status()
+    except Exception as error:
+        raise EarthEngineError(
+            f"Earth Engine could not start the Mandya Google Drive export: {error}"
+        ) from error
+    if not task.id or not status.get("state"):
+        raise EarthEngineError(
+            "Earth Engine started the export but did not return a task ID and status."
+        )
+    return {
+        "task_id": task.id,
+        "state": status["state"],
+        "description": export_name,
+        "drive_folder": "Crop_Health_Monitoring",
+    }
+
+
+def mandya_export_task_status(
+    task_id: str,
+    project: str | None = None,
+) -> dict[str, str]:
+    """Return a sanitized status for a previously started Mandya Drive export."""
+    if not isinstance(task_id, str) or not task_id.strip():
+        raise ValueError("Provide a valid Earth Engine export task ID.")
+    ee = _earth_engine(project)
+    try:
+        statuses = ee.data.getTaskStatus(task_id.strip())
+    except Exception as error:
+        raise EarthEngineError(
+            f"Earth Engine could not read export task status: {error}"
+        ) from error
+    if not statuses or not statuses[0].get("state"):
+        raise EarthEngineError("Earth Engine returned no status for the export task.")
+    task_status = statuses[0]
+    return {
+        "state": task_status["state"],
+        "description": task_status.get("description", "Mandya NDVI export"),
+        "error_message": task_status.get("error_message", ""),
     }
