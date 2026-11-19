@@ -85,6 +85,20 @@ The page uses a dark theme and displays the archived Mandya products when live E
 
 <img src="docs/screenshots/satellite-seasonal-raster-statistics.png" alt="Month-to-month NDVI changes and processed raster statistics" width="900">
 
+#### Multi-district analysis screenshots
+
+<img src="docs/screenshots/crop-health-indices.png" alt="Crop health indices with NDVI, NDRE, and NDWI maps" width="900">
+
+<img src="docs/screenshots/ndvi-time-series.png" alt="NDVI time-series chart and observation table" width="900">
+
+<img src="docs/screenshots/stress-analysis.png" alt="Stress analysis metrics for the selected district" width="900">
+
+<img src="docs/screenshots/ndvi-comparison-second-date.png" alt="Second-date NDVI comparison map" width="900">
+
+<img src="docs/screenshots/ndvi-comparison-change.png" alt="Common-valid-pixel NDVI change map" width="900">
+
+<img src="docs/screenshots/data-exports.png" alt="CSV and Earth Engine GeoTIFF export tasks" width="900">
+
 ## Run the web dashboard
 
 Install the project dependencies if needed, then start the local Flask app from the project root:
