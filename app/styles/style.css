@@ -1,0 +1,27 @@
+html, body, [class*="css"] {
+  font-family: "Segoe UI", "Inter", sans-serif;
+}
+.stApp {
+  background: #111712;
+  color: #f3f7f1;
+}
+section[data-testid="stSidebar"] {
+  background: #18211A;
+  border-right: 1px solid #2B3A2D;
+}
+.stMetric {
+  background: #1B251C;
+  border: 1px solid #314635;
+  border-radius: 14px;
+  padding: 14px;
+}
+div[data-testid="stMetricValue"] {
+  color: #BDF57A;
+}
+.stButton > button {
+  border-radius: 10px;
+  background: #70C74A;
+  color: #102012;
+  border: none;
+  font-weight: 700;
+}

@@ -11,18 +11,24 @@ inspection.
 
 ## Features
 
-- District boundary validation before processing.
-- Sentinel-2 filtering by date, region, and scene cloud percentage.
-- Image selection based on cloud-free pixel count within the district, rather
-  than scene cloud percentage alone.
-- One documented SCL cloud/shadow/snow mask for all index calculations.
-- NDVI, NDRE, and green-NIR NDWI maps and regional statistics.
-- NDVI date comparison for target dates 2025-07-15 and 2025-10-15. Change is
-  masked to pixels valid on both dates.
-- Bounded NDVI/NDRE time-series extraction, CSV files, and charts.
-- NDVI < 0.30 stress classification, including NoData-aware local raster
-  analysis.
-- Separate district output folders and timestamped reports.
+- **Districts and boundaries:** validated Mandya, Mysuru, and Hassan district
+  GeoJSON boundaries, plus Polygon/MultiPolygon farm GeoJSON uploads.
+- **Sentinel-2 processing:** filter Sentinel-2 SR Harmonized imagery by date,
+  region, and cloud percentage; select suitable imagery using valid-pixel
+  coverage; apply a shared SCL cloud, shadow, and snow mask.
+- **Vegetation indices:** calculate and map NDVI, NDRE, and green-NIR NDWI with
+  regional statistics.
+- **Date comparison:** compare user-selected dates and calculate NDVI change
+  only for pixels valid on both dates.
+- **Time series:** generate 12- or 24-observation NDVI/NDRE series over a
+  selected date range, with CSV data and charts. Web reductions are batched
+  and identical requests are cached for one hour.
+- **Crop stress:** apply a configurable NDVI threshold, report stressed area
+  and percentage, and preserve invalid pixels as NoData.
+- **Exports:** download analysis tables as CSV and submit GeoTIFFs as
+  asynchronous Earth Engine Google Drive tasks with task-status feedback.
+- **CLI pipeline:** run one district or all three districts independently,
+  writing timestamped reports, charts, time-series data, and export manifests.
 
 ## Technology
 
@@ -35,17 +41,31 @@ Matplotlib, Shapely, GeoJSON, and GeoTIFF.
 data/
   boundaries/                 # geoBoundaries district polygons (WGS 84)
   sample_boundary.geojson     # original sample input, retained unchanged
+app/
+  app.py                      # Streamlit application entry point
+  pages/                      # dashboard and analysis/export pages
+  components/                 # shared maps, controls, charts and styles
+src/
+  boundary_manager.py         # uploaded/bundled boundary handling
+  analysis_engine.py          # web index analysis
+  timeseries_engine.py        # web time series
+  comparison_engine.py        # date comparison
+  stress_engine.py            # stress classes and area statistics
+  export_manager.py           # CSV/JSON and Drive GeoTIFF tasks
 gee/
-  boundaries.py               # boundary validation and EE conversion
+  boundaries.py               # CLI boundary validation and EE conversion
   config.py                   # project, date, and output configuration
-  ndvi_date_comparison.py
-  ndvi_ndre_timeseries.py
-  ndvi_stress_analysis.py
-  raster_utils.py
-  sentinel2_fetcher.py
-  sentinel2_processor.py
+  ndvi_date_comparison.py     # CLI date comparisons
+  ndvi_ndre_timeseries.py     # CLI time series
+  ndvi_stress_analysis.py     # local raster stress processing
+  raster_utils.py             # local raster operations
+  sentinel2_fetcher.py        # Sentinel-2 selection and mosaics
+  sentinel2_processor.py      # shared masks and index calculations
 main.py                       # district and all-district CLI
-tests/
+tests/                        # local unit tests and optional live smoke test
+docs/
+  architecture.md
+  screenshots/                # example web application screenshots
 outputs/<district>/
   maps/                       # Earth Engine Drive export task manifests
   charts/
@@ -56,8 +76,13 @@ outputs/<district>/
 Earth Engine GeoTIFFs are submitted as Google Drive export tasks, not silently
 downloaded to the local machine. The CSV manifest in each district's `maps/`
 directory records task IDs and task states; check Earth Engine Tasks and
-download completed exports from the configured Drive folder. Local reports,
+download completed pipeline exports from the configured Drive folder. The web
+app submits GeoTIFF exports on demand to the `crop_health_monitoring` folder
+and displays each task's status; completed web-app exports can be downloaded
+from that Google Drive folder. Local reports,
 time-series CSVs, and charts are written beneath the corresponding district.
+The app's GeoTIFF controls submit tasks only when requested; importing or
+viewing a page does not launch an export.
 
 ## Install on Windows
 
@@ -127,9 +152,11 @@ python main.py --district mandya --start-date 2025-01-01 --end-date 2026-01-01
 Each date target searches a seven-day interval on either side, mosaics tiles
 from each acquisition date, and selects the date with the most valid
 SCL-masked B8 pixels in the district. Time-series observations are mosaicked
-by acquisition date and limited to 24 dates per district. Exports are asynchronous Google Drive
-tasks. A district failure is logged and, with `--all`, does not prevent the
-other districts from running.
+by acquisition date and limited to 24 dates per district in the CLI. The web
+time-series page samples 12 or 24 observations across the selected range,
+batches Earth Engine reductions, and caches identical results for one hour.
+Exports are asynchronous Google Drive tasks. A district failure is logged and,
+with `--all`, does not prevent the other districts from running.
 
 ## Indices and masking
 
@@ -179,6 +206,15 @@ must be performed separately with valid GEE credentials and permissions; do
 not interpret local tests or queued exports as proof of completed satellite
 processing.
 
+Run the optional live GEE web-backend smoke test:
+
+```powershell
+python tests/live_gee_smoke.py
+```
+
+This test calls Earth Engine for Mandya, Mysuru, and Hassan and prints actual
+acquisition dates and index means. It requires credentials and project access.
+
 ## Known limitations
 
 - Earth Engine export tasks require network access, project access, and Drive
@@ -192,3 +228,59 @@ processing.
 - Live Earth Engine processing still requires credentials and project
   permissions. Project imports use Rasterio's bundled PROJ database for this
   Python process only; PostgreSQL and system configuration are not modified.
+
+## Launch the web application
+
+Install the web dependencies:
+
+```powershell
+python -m pip install -r requirements.txt
+streamlit run app/app.py
+```
+
+Open the local URL printed by Streamlit. Use the sidebar to select Mandya,
+Mysuru, Hassan, or upload one Polygon/MultiPolygon GeoJSON. Analysis results
+remain empty until Earth Engine processing is run.
+
+The app uses the same Earth Engine project and account permissions as the CLI.
+Complete Earth Engine authentication before running an analysis or submitting
+an export. Do not put credentials or token files in the repository.
+
+### Web pages
+
+- **Dashboard:** selected district/farm boundary, area, and summary metrics.
+- **Crop Health Analysis:** date-range and cloud-filtered Sentinel-2 imagery,
+  true-color, NDVI, NDRE, and NDWI maps and GeoTIFF export.
+- **Time Series Analysis:** select a date range and 12 or 24 observations;
+  inspect NDVI/NDRE charts and table data, and download CSV.
+- **NDVI Comparison:** choose two dates, inspect each NDVI layer and the
+  common-valid-pixel change map, and export the change GeoTIFF.
+- **Stress Analysis:** choose dates and an NDVI threshold; view valid/stressed
+  pixel counts, stressed area/percentage, map, CSV, and GeoTIFF.
+- **Data Export:** access local CSV outputs and view Earth Engine export tasks.
+
+## Application screenshots
+
+These screenshots show example results from the Streamlit application:
+
+### Crop health indices
+
+![Crop Health Analysis showing NDVI, NDRE, and NDWI metrics with the selected NDWI map](docs/screenshots/crop-health-indices.png)
+
+### NDVI time series
+
+![NDVI time-series chart and observation table](docs/screenshots/ndvi-time-series.png)
+
+### Stress analysis
+
+![Stress Analysis results with acquisition date and stressed-pixel metrics](docs/screenshots/stress-analysis.png)
+
+### NDVI comparison
+
+![Second-date NDVI comparison map](docs/screenshots/ndvi-comparison-second-date.png)
+
+![NDVI change map](docs/screenshots/ndvi-comparison-change.png)
+
+### Earth Engine exports
+
+![CSV download and Earth Engine GeoTIFF export task tables](docs/screenshots/data-exports.png)

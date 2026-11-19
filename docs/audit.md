@@ -25,6 +25,8 @@
 | Only a synthetic Mandya sample boundary existed. | Added three valid geoBoundaries ADM2 polygons, preserving the original sample file. |
 | Existing outputs use a 10 m UTM 43N grid, but acquisition dates are not embedded in all rasters. | Existing files were retained; newly generated acquisition dates are written in per-run reports. |
 | `PROJ_LIB` resolved to PostgreSQL's PostGIS PROJ database, too old for the installed Rasterio. | Project imports set `PROJ_LIB` and `PROJ_DATA` to Rasterio's packaged database in the current Python process only; PostgreSQL files and system settings are not changed. |
+| The project had no web interface. | Added a Streamlit application with a dashboard and six analysis/export pages backed by reusable modules in `src/`. |
+| Live GEE web-backend smoke testing was missing. | Added `tests/live_gee_smoke.py`; it completed for Mandya, Mysuru and Hassan using October 2025 imagery. |
 
 ## Scope and verification limitations
 

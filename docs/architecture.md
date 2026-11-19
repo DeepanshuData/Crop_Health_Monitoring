@@ -18,6 +18,29 @@
 7. `gee/ndvi_stress_analysis.py` handles local raster classification and
    verifies output grid metadata after writing.
 
+## Web application layers
+
+The Streamlit application uses a thin UI over reusable backend engines:
+
+- `app/app.py` is the entry point; `app/pages/*.py` provides the dashboard,
+  crop-health, time-series, comparison, stress, and export views.
+- `app/components/` contains shared sidebar, map, metric, chart and style
+  components.
+- `src/boundary_manager.py` validates uploaded or bundled GeoJSON, preserves
+  uploads, converts boundaries to Earth Engine geometries and calculates area.
+- `src/analysis_engine.py` owns GEE initialization and NDVI/NDRE/NDWI analysis.
+- `src/timeseries_engine.py` builds bounded, acquisition-date time-series data.
+- `src/comparison_engine.py` masks NDVI change to common valid observations.
+- `src/stress_engine.py` calculates threshold-based stress and area totals.
+- `src/export_manager.py` writes CSV/JSON local outputs and submits
+  asynchronous Earth Engine GeoTIFF exports to Google Drive. The Streamlit
+  export controls show the current task status without making large
+  synchronous download-URL requests.
+
+The existing `gee/` modules remain reusable CLI implementation surfaces and
+do not execute GEE work on import. The web application initializes GEE only
+after the sidebar boundary is validated and an analysis is requested.
+
 ## NoData and area semantics
 
 Cloud and invalid pixels stay masked through the index and change calculations.

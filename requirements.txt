@@ -4,3 +4,8 @@ numpy
 pandas
 rasterio
 shapely
+streamlit
+folium
+streamlit-folium
+pyproj
+requests

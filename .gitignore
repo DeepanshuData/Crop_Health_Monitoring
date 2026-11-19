@@ -38,3 +38,6 @@ outputs/
 !outputs/mysuru/**
 !outputs/hassan/
 !outputs/hassan/**
+
+# Uploaded user boundaries
+data/uploads/
