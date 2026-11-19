@@ -1,0 +1,6 @@
+earthengine-api
+matplotlib
+numpy
+pandas
+rasterio
+shapely

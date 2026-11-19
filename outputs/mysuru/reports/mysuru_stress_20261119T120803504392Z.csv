@@ -1,0 +1,2 @@
+district,run_id,threshold,valid_pixels,stressed_pixels,non_stressed_pixels,valid_area_ha,mean_valid_pixel_area_m2,stressed_area_ha,non_stressed_area_ha,stressed_percentage_valid,total_grid_pixels,nodata_pixels,nodata_note
+mysuru,20261119T120712069733Z,0.3,12241127,1235188,11005938,475686.7958406637,388.5972229849945,47994.71910283977,427692.0767378239,10.090476146518208,,,Exact counts require the exported raster grid.

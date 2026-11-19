@@ -1,0 +1,57 @@
+{
+  "district": "mysuru",
+  "run_id": "20261119T120712069733Z",
+  "date_range_start": "2025-01-01",
+  "date_range_end": "2026-01-01",
+  "first_target_date": "2025-07-15",
+  "first_acquisition_date": "2025-07-09",
+  "first_scene_cloud_percentage": 60.43942,
+  "second_target_date": "2025-10-15",
+  "second_acquisition_date": "2025-10-12",
+  "second_scene_cloud_percentage": 3.813358,
+  "first_date_valid_pixels": 2201473,
+  "second_date_valid_pixels": 12251589,
+  "common_valid_pixels": 1783369,
+  "common_valid_area_ha": 69221.77919942091,
+  "common_valid_area_percent": 10.72529702921896,
+  "ndvi_mean": 0.5113272303611744,
+  "ndre_mean": 0.3368370005816743,
+  "ndwi_mean": -0.46217736113676267,
+  "date_comparison_statistics": {
+    "first_date": {
+      "NDVI_count": 2201473,
+      "NDVI_max": 1,
+      "NDVI_mean": 0.5113272303611744,
+      "NDVI_min": -0.7429193899782135
+    },
+    "second_date": {
+      "NDVI_count": 12251589,
+      "NDVI_max": 0.9438899379552198,
+      "NDVI_mean": 0.5917888164567182,
+      "NDVI_min": -0.5652173913043478
+    },
+    "change_common_pixels": {
+      "NDVI_Change_count": 1783369,
+      "NDVI_Change_max": 1.0043412607645732,
+      "NDVI_Change_mean": 0.06652916373977089,
+      "NDVI_Change_min": -0.9356534533933225
+    }
+  },
+  "stress_threshold": 0.3,
+  "stress_valid_pixels": 12241127,
+  "stress_stressed_pixels": 1235188,
+  "stress_non_stressed_pixels": 11005938,
+  "stress_valid_area_ha": 475686.7958406637,
+  "stress_mean_valid_pixel_area_m2": 388.5972229849945,
+  "stress_stressed_area_ha": 47994.71910283977,
+  "stress_non_stressed_area_ha": 427692.0767378239,
+  "stress_stressed_percentage_valid": 10.090476146518208,
+  "stress_total_grid_pixels": null,
+  "stress_nodata_pixels": null,
+  "stress_nodata_note": "Exact counts require the exported raster grid.",
+  "timeseries_records": 24,
+  "timeseries_total_scenes": 361,
+  "drive_export_folder": "crop_health_mysuru_20261119T120712069733Z",
+  "stress_chart": "C:\\Users\\T RAO\\OneDrive\\Desktop\\crop-health-monitoring\\outputs\\mysuru\\charts\\mysuru_stress_distribution_20261119T120712069733Z.png",
+  "stress_report_csv": "C:\\Users\\T RAO\\OneDrive\\Desktop\\crop-health-monitoring\\outputs\\mysuru\\reports\\mysuru_stress_20261119T120803504392Z.csv"
+}

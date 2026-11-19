@@ -1,0 +1,21 @@
+
+{
+  "type": "Feature",
+  "properties": {
+    "name": "Sample Agricultural Area",
+    "district": "Mandya",
+    "state": "Karnataka"
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [76.95, 12.50],
+        [76.97, 12.50],
+        [76.97, 12.52],
+        [76.95, 12.52],
+        [76.95, 12.50]
+      ]
+    ]
+  }
+}

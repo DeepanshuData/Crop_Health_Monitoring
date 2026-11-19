@@ -1,0 +1,2 @@
+district,run_id,threshold,valid_pixels,stressed_pixels,non_stressed_pixels,valid_area_ha,mean_valid_pixel_area_m2,stressed_area_ha,non_stressed_area_ha,stressed_percentage_valid,total_grid_pixels,nodata_pixels,nodata_note
+mandya,20261119T120326656320Z,0.3,3341923,228948,3112974,129654.13444706402,387.96266235656543,8884.1113566689,120770.02309039507,6.850786209017982,,,Exact counts require the exported raster grid.

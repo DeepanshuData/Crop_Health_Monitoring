@@ -1,0 +1,57 @@
+{
+  "district": "mandya",
+  "run_id": "20261119T114344371158Z",
+  "date_range_start": "2025-01-01",
+  "date_range_end": "2026-01-01",
+  "first_target_date": "2025-07-15",
+  "first_acquisition_date": "2025-07-11",
+  "first_scene_cloud_percentage": 59.713674,
+  "second_target_date": "2025-10-15",
+  "second_acquisition_date": "2025-10-09",
+  "second_scene_cloud_percentage": 8.773639,
+  "first_date_valid_pixels": 838634,
+  "second_date_valid_pixels": 4444413,
+  "common_valid_pixels": 450720,
+  "common_valid_area_ha": 17439.39360930513,
+  "common_valid_area_percent": 3.542494357140788,
+  "ndvi_mean": 0.4537072610414133,
+  "ndre_mean": 0.2708528891732447,
+  "ndwi_mean": -0.43660876292877543,
+  "date_comparison_statistics": {
+    "first_date": {
+      "NDVI_count": 838634,
+      "NDVI_max": 1,
+      "NDVI_mean": 0.45370726104141323,
+      "NDVI_min": -0.9103313840155945
+    },
+    "second_date": {
+      "NDVI_count": 4444413,
+      "NDVI_max": 1,
+      "NDVI_mean": 0.5787405947540156,
+      "NDVI_min": -1
+    },
+    "change_common_pixels": {
+      "NDVI_Change_count": 450720,
+      "NDVI_Change_max": 1.00513698630137,
+      "NDVI_Change_mean": 0.1445066348724064,
+      "NDVI_Change_min": -1.7359040829552819
+    }
+  },
+  "stress_threshold": 0.3,
+  "stress_valid_pixels": 4439140,
+  "stress_stressed_pixels": 397262,
+  "stress_non_stressed_pixels": 4041877,
+  "stress_valid_area_ha": 172250.0365856378,
+  "stress_mean_valid_pixel_area_m2": 388.0256909798695,
+  "stress_stressed_area_ha": 15414.656498664877,
+  "stress_non_stressed_area_ha": 156835.3800869729,
+  "stress_stressed_percentage_valid": 8.949075721874056,
+  "stress_total_grid_pixels": null,
+  "stress_nodata_pixels": null,
+  "stress_nodata_note": "Exact counts require the exported raster grid.",
+  "timeseries_records": 60,
+  "timeseries_total_scenes": 410,
+  "drive_export_folder": "crop_health_mandya_20261119T114344371158Z",
+  "stress_chart": "C:\\Users\\T RAO\\OneDrive\\Desktop\\crop-health-monitoring\\outputs\\mandya\\charts\\mandya_stress_distribution_20261119T114344371158Z.png",
+  "stress_report_csv": "C:\\Users\\T RAO\\OneDrive\\Desktop\\crop-health-monitoring\\outputs\\mandya\\reports\\mandya_stress_20261119T114429871243Z.csv"
+}
